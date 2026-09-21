@@ -1,1 +1,1 @@
-# energy-market-quant
+# Quant research for the Energy markets.
