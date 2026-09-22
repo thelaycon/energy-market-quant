@@ -7,10 +7,10 @@ whichever nets back more once shipping cost is accounted for. That
 flexibility is modeled as a **spread option** and priced step by step,
 starting simple and adding realism.
 
-All prices used are **illustrative reference points from public
-sources/aggregators**, not Platts-grade or exchange settlement data, and
-are clearly labeled as such throughout. No confidential or proprietary
-data is used anywhere in this project.
+All prices used are from public sources (ICE, CME, aggregators), not
+Platts-grade or exchange settlement data, and are labeled with their
+source throughout. No confidential or proprietary data is used anywhere
+in this project.
 
 ---
 
@@ -44,12 +44,13 @@ differential, not a market price.
 | Strike (K) | ~$0.71/MMBtu | shipping_asia − shipping_europe |
 
 ### Key result
-At current reference prices, the cargo is **near the money**: breakeven
+At these reference prices, the cargo is **near the money**: breakeven
 JKM ≈ $27.60 (JKM would need to rise ~6% from $26.00 for diversion to
-pay). Intrinsic value today is $0.00.
+pay). Intrinsic value at these prices is $0.00.
 
 ### Limitations / assumptions
-1. Prices are illustrative reference points, not real-time market data.
+1. Prices are reference points from aggregators, not exchange settlement
+   data.
 2. FX (EUR/USD) is held fixed; not modeled as a risk factor.
 3. No timing gap: prices are compared at a single instant, ignoring the
    real nomination-date structure (addressed conceptually in Step 2).
@@ -58,9 +59,6 @@ pay). Intrinsic value today is $0.00.
    Pacific rate available); ignores ballast-leg fuel, canal fees, and
    route disruptions.
 6. No regas/terminal cost differences by destination.
-7. Reference prices reflect an unusually disrupted market (Hormuz-related
-   supply risk, low EU storage), so calibrated parameters from this
-   period may not generalize to calmer markets.
 
 ---
 
@@ -86,15 +84,39 @@ than Europe to cover the extra shipping cost. This makes it a
   destination. Modeled here as a single fixed date; real contracts may use
   a nomination window instead, a possible future refinement.
 
-### Two calculators used
-- **Margrabe (1978)**: exact closed-form price when there is no strike
-  (K = 0). Used as a simplified reference case.
-- **Kirk (1995)**: standard approximation for spread options with a
-  non-zero strike. Used for the actual case (K = $0.71). It is an
-  approximation because "TTF + strike" is not exactly lognormal; Kirk
-  rescales TTF's volatility by its share of the combined price to
-  compensate. Approximation quality is expected to be good here since K
-  is small relative to TTF (~2.6%).
+### Margrabe's formula (K = 0)
+
+For the option to exchange asset 2 (TTF) for asset 1 (JKM), with no strike:
+
+    V = e^(-rT) [ F1 · N(d1) − F2 · N(d2) ]
+
+    d1 = [ ln(F1/F2) + 0.5σ²T ] / (σ√T)
+    d2 = d1 − σ√T
+    σ  = sqrt( σ1² + σ2² − 2ρσ1σ2 )
+
+where F1, F2 are the forward prices, σ1, σ2 are their volatilities, ρ is
+their correlation, T is time to expiry, r is the discount rate, and
+N(·) is the standard normal CDF. σ is the volatility of the **spread**
+(F1 − F2), the single quantity that determines the option's value.
+
+### Kirk's approximation (K > 0)
+
+No exact formula exists once a non-zero strike is introduced, since
+F2 + K is not lognormal. Kirk (1995) approximates it by treating F2 + K
+as a single asset and rescaling its volatility by its share of the total:
+
+    F2' = F2 + K
+    w   = F2 / F2'
+    σ_K = sqrt( σ1² + (w·σ2)² − 2ρσ1(w·σ2) )
+
+    d1 = [ ln(F1/F2') + 0.5σ_K²T ] / (σ_K√T)
+    d2 = d1 − σ_K√T
+
+    V = e^(-rT) [ F1 · N(d1) − F2' · N(d2) ]
+
+Setting K = 0 recovers F2' = F2, w = 1, and the formula collapses exactly
+to Margrabe. Approximation quality is expected to be good here since K is
+small relative to F2 (~2.6%).
 
 ### Inputs used (see code for exact values)
 | Input | Value | Status |
@@ -108,11 +130,11 @@ than Europe to cover the extra shipping cost. This makes it a
 | Interest rate (r) | 4% | flat, illustrative |
 
 **Volatility, correlation, and time-to-nomination are assumptions, not
-estimates.** Steps 3/4 replace these with values calibrated to historical
+estimates.** Step 4 replaces these with values calibrated to historical
 TTF/JKM price data.
 
 ### Key results (illustrative)
-- Intrinsic value today: $0.00 (out of the money)
+- Intrinsic value at these prices: $0.00 (out of the money)
 - Kirk price: ~$0.73/MMBtu (~$2.5M per cargo), entirely time value
 - Margrabe price (no strike): ~$0.97/MMBtu
 - Implied probability of finishing in the money: ~30%
@@ -140,8 +162,63 @@ also confirmed to collapse exactly to Margrabe (assertion test in code).
 
 ---
 
+## Step 3: Real Forward Curves (ICE & CME)
+
+### What this step does
+Replaces the reference prices used in Steps 1-2 with real, sourced
+forward curves, and re-examines the option's moneyness across the full
+observable curve rather than at a single price point.
+
+### Data sources
+| Series | Source | Retrieved | Coverage |
+|---|---|---|---|
+| TTF | ICE Endex WebICE, delayed quotes | 22 Sep 2026 | Oct 2026 – Feb 2028 |
+| JKM | CME Group, delayed quotes | 22 Sep 2026 | Nov 2026 – Apr 2028 |
+
+Both are free, exchange-published, timestamped quotes (no subscription
+required). TTF is converted to USD/MMBtu using the EUR/USD rate from
+Step 1 to make the two series comparable. The curves are merged on 14
+overlapping contract months (Nov 2026 – Feb 2028) for analysis.
+
+### Key results
+| | Value |
+|---|---|
+| Spread (JKM − TTF) across all 14 observed months | **Positive** in every month, $0.46–$2.59/MMBtu |
+| Widest spread | Nov 2026 (~$2.59/MMBtu) |
+| Narrowest spread | May 2027 (~$0.46/MMBtu) |
+| Dec26 TTF (USD) | $23.31/MMBtu |
+| Dec26 JKM | $25.38/MMBtu |
+| Dec26 spread | $2.07/MMBtu |
+| **Dec26 intrinsic value** (spread − K) | **+$1.36/MMBtu (~$4.6M/cargo)** |
+
+### What this shows
+Using real curve data instead of the Step 1-2 reference prices, JKM
+trades above TTF across the entire observed curve, and the diversion
+option is **in the money** at the 3-month nomination point, not
+near-breakeven as the Step 1-2 reference prices implied. The spread is
+not constant across the curve: it narrows sharply into spring 2027
+(bottoming around May 2027), which is the point where the diversion
+decision is most sensitive to price moves.
+
+### Seasonality
+Both curves show the same shape: elevated winter prices (Nov 2026–Feb
+2027), a sharp drop heading into spring 2027, and a flatter
+summer/shoulder band. This shape is the input Step 4 uses to separate
+seasonal pattern from genuine random price movement.
+
+### Limitations
+- Quotes are delayed (10-15 min) and, for JKM, reflect prior-day
+  settlement rather than live trades at retrieval time.
+- Only 14 months have data on both sides; the full curve (through 2033
+  for TTF) is not yet used.
+- A single EUR/USD rate is applied across the whole curve; no forward
+  FX curve is used.
+- Curve reflects a single day's snapshot, not a time series — no history
+  yet to estimate volatility or correlation from (addressed in Step 4).
+
+---
+
 ## Next steps
-- **Step 3**: real TTF/JKM data, forward curve construction
 - **Step 4**: two-factor (Schwartz-Smith) calibration for volatility and correlation, replacing today's placeholders
 - **Step 5**: Monte Carlo pricing vs Kirk, quantifying where the approximation breaks down
 - **Step 6**: route constraints, boil-off, canal transit

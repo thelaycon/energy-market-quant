@@ -1,0 +1,19 @@
+contract_month,price_usd_mmbtu,source,retrieved_ct,contract_code,price_type
+2026-11,25.990,CME Group (delayed),2026-09-21T18:04:04,JKMX6,prior_settle
+2026-12,25.380,CME Group (delayed),2026-09-21T18:06:29,JKMZ6,prior_settle
+2027-01,25.035,CME Group (delayed),2026-09-21T19:45:08,JKMF7,prior_settle
+2027-02,24.115,CME Group (delayed),2026-09-21T19:45:08,JKMG7,prior_settle
+2027-03,22.765,CME Group (delayed),2026-09-21T19:45:08,JKMH7,prior_settle
+2027-04,19.320,CME Group (delayed),2026-09-21T19:45:08,JKMJ7,prior_settle
+2027-05,18.030,CME Group (delayed),2026-09-21T19:45:08,JKMK7,prior_settle
+2027-06,17.675,CME Group (delayed),2026-09-21T19:45:08,JKMM7,prior_settle
+2027-07,17.780,CME Group (delayed),2026-09-21T19:45:08,JKMN7,prior_settle
+2027-08,17.785,CME Group (delayed),2026-09-21T19:45:08,JKMQ7,prior_settle
+2027-09,17.580,CME Group (delayed),2026-09-21T19:45:08,JKMU7,prior_settle
+2027-10,17.760,CME Group (delayed),2026-09-21T19:45:08,JKMV7,prior_settle
+2027-11,17.695,CME Group (delayed),2026-09-21T19:45:08,JKMX7,prior_settle
+2027-12,17.815,CME Group (delayed),2026-09-21T19:45:08,JKMZ7,prior_settle
+2028-01,17.710,CME Group (delayed),2026-09-21T19:45:08,JKMF8,prior_settle
+2028-02,17.175,CME Group (delayed),2026-09-21T19:45:08,JKMG8,prior_settle
+2028-03,15.725,CME Group (delayed),2026-09-21T19:45:08,JKMH8,prior_settle
+2028-04,12.715,CME Group (delayed),2026-09-21T19:45:08,JKMJ8,prior_settle
